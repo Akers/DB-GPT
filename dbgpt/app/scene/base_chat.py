@@ -33,6 +33,7 @@ class BaseChat(ABC):
 
     chat_scene: str = None
     llm_model: Any = None
+    is_customized_prompt_template: bool = False
     # By default, keep the last two rounds of conversation records as the context
     chat_retention_rounds: int = 0
 
@@ -49,7 +50,9 @@ class BaseChat(ABC):
             - chat_session_id: (str) chat session_id
             - current_user_input: (str) current user input
             - model_name:(str) llm model name
-            - select_param:(str) select param
+            - select_param:(str) space name
+            - is_customized_prompt_template:() if gives customized prompt when calling chat api it will be True
+            - customized_prompt: Dict customized prompt，sceme: {scene: str, template: str}
         """
         self.chat_session_id = chat_param["chat_session_id"]
         self.chat_mode = chat_param["chat_mode"]
@@ -65,13 +68,22 @@ class BaseChat(ABC):
         #     self.chat_mode.value()
         # ]
         self.prompt_template: PromptTemplate = (
-            CFG.prompt_template_registry.get_prompt_template(
-                self.chat_mode.value(),
-                language=CFG.LANGUAGE,
-                model_name=self.llm_model,
-                proxyllm_backend=CFG.PROXYLLM_BACKEND,
+                CFG.prompt_template_registry.get_prompt_template(
+                    self.chat_mode.value(),
+                    language=CFG.LANGUAGE,
+                    model_name=self.llm_model,
+                    proxyllm_backend=CFG.PROXYLLM_BACKEND,
+                )
             )
-        )
+        # load customized prompt template
+        if chat_param["is_customized_prompt_template"]:
+            self.is_customized_prompt_template = True
+            if chat_param["customized_prompt"]["scene"] != None:
+                self.prompt_template.template_define=chat_param["customized_prompt"]["scene"]
+            if chat_param["customized_prompt"]["template"] != None:
+                self.prompt_template.template=chat_param["customized_prompt"]["template"]
+
+        print("self.prompt_template: ", self.prompt_template, "\n")
         chat_history_fac = ChatHistory()
         ### can configurable storage methods
         self.memory = chat_history_fac.get_store_instance(chat_param["chat_session_id"])
@@ -371,6 +383,7 @@ class BaseChat(ABC):
 
     def generate_llm_text(self) -> str:
         warnings.warn("This method is deprecated - please use `generate_llm_messages`.")
+        print ("generate_llm_text -> self.prompt_template: ", self.prompt_template)
         text = ""
         ### Load scene setting or character definition
         if self.prompt_template.template_define:
@@ -506,7 +519,6 @@ class BaseChat(ABC):
             for dict_item in antv_charts
             for key, value in dict_item.items()
         )
-
 
 def _build_model_operator(
     is_stream: bool = False, dag_name: str = "llm_model_dag"

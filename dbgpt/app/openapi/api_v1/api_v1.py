@@ -385,6 +385,32 @@ async def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
         "select_param": dialogue.select_param,
         "model_name": dialogue.model_name,
     }
+    
+    promptTemplateVailable = False
+    isCustomizedPrompt = False
+    promptTemplateJson = None
+    print("\n\nget_chat_instance -> customized_prompt: ", dialogue.customized_prompt, "\n")
+    # correctedJSONStr = dialogue.customized_prompt.replace("\n", "\\n")
+    if dialogue.customized_prompt != None and dialogue.customized_prompt.strip() != "":
+        isCustomizedPrompt = True
+        try:
+            promptTemplateJson = json.loads(dialogue.customized_prompt)
+            if promptTemplateJson['template'] != None or promptTemplateJson['scene'] != None:
+                promptTemplateVailable = True
+        except ValueError as e:
+            print(e)
+            promptTemplateVailable = False
+    
+    chat_param["is_customized_prompt_template"] = isCustomizedPrompt
+    if isCustomizedPrompt :
+        if promptTemplateVailable:
+            chat_param["customized_prompt"] = promptTemplateJson
+        else:
+            chat_param["customized_prompt"] = {
+                "scene": None,
+                "template": dialogue.customized_prompt
+            }
+    
     chat: BaseChat = await blocking_func_to_async(
         get_executor(),
         CHAT_FACTORY.get_implementation,

@@ -34,6 +34,8 @@ class ChatKnowledge(BaseChat):
             - current_user_input: (str) current user input
             - model_name:(str) llm model name
             - select_param:(str) space name
+            - is_customized_prompt_template:() if gives customized prompt when calling chat api it will be True
+            - customized_prompt: Dict customized prompt，sceme: {scene: str, template: str}
         """
         from dbgpt.rag.embedding_engine.embedding_engine import EmbeddingEngine
         from dbgpt.rag.embedding_engine.embedding_factory import EmbeddingFactory
@@ -107,10 +109,13 @@ class ChatKnowledge(BaseChat):
 
     @trace()
     async def generate_input_values(self) -> Dict:
-        if self.space_context and self.space_context.get("prompt"):
+        
+        if not self.is_customized_prompt_template and self.space_context and self.space_context.get("prompt"):
             self.prompt_template.template_define = self.space_context["prompt"]["scene"]
             self.prompt_template.template = self.space_context["prompt"]["template"]
         from dbgpt.rag.retriever.reinforce import QueryReinforce
+
+        print("\n\nself.prompt_template: ", self.prompt_template, "\n\n")
 
         # query reinforce, get similar queries
         query_reinforce = QueryReinforce(

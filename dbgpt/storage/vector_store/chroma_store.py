@@ -1,5 +1,6 @@
 import os
 import logging
+import time
 from typing import Any
 
 from chromadb.config import Settings
@@ -73,10 +74,15 @@ class ChromaStore(VectorStoreBase):
         return len(files) > 0
 
     def load_document(self, documents):
-        logger.info("ChromaStore load document")
+        start_time = time.time()
+        starttimestr = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        logger.info(f"[{starttimestr}] ChromaStore load document Started...")
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
         ids = self.vector_store_client.add_texts(texts=texts, metadatas=metadatas)
+        end_time = time.time()
+        endtimestr = time.strftime("%Y-%m-%d %H:%M:%S", end_time)
+        logger.info(f"{endtimestr} ChromaStore load document Finished spands time: {end_time - start_time}s")
         return ids
 
     def delete_vector_name(self, vector_name):

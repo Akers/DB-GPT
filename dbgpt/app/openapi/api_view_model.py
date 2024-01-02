@@ -66,6 +66,14 @@ class ConversationVo(BaseModel):
     """
     incremental: bool = False
 
+    """个性化Prompt模板，如不为None会覆盖原对话场景中配置的Prompt
+    JSON格式：{scene:"", template:""}，或传入非JSON格式字符串，则只覆盖原场景的prompt_template但不覆盖scene
+    Customized PromptTemplate, will replace the scene and prompt config of the chat, 
+    JSON formated string like {scene:"", template:""}, or string as template content
+    witch only replace the prompt template.
+    """
+    customized_prompt: str = None
+
     sys_code: Optional[str] = None
 
 
